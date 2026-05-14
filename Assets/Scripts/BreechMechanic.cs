@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[ExecuteAlways]
 public class BreechMechanic : MonoBehaviour
 {
     [Header("Mechanical Parts")]
@@ -16,30 +17,51 @@ public class BreechMechanic : MonoBehaviour
 
     [Header("Testing Controls")]
     [Range(0f, 1f)]
-    [Tooltip("Drag this slider to test the animation! 0 is closed, 1 is open.")]
     public float openProgress = 0f;
 
-    // OnValidate runs instantly in the Editor whenever you change a value in the Inspector.
-    // This allows us to preview the animation without hitting Play!
+    [Header("System Links")]
+    [Tooltip("Link the Firing Mechanic script here so the breech can tell it when to eject!")]
+    public FiringMechanic firingSystem;
+
+    // Tracks where the breech was a millisecond ago
+    private float lastProgress = 0f;
+
     private void OnValidate()
     {
         UpdateMechanicalParts();
     }
 
+    private void Update()
+    {
+        // This ensures the slider works in Play Mode too!
+        if (Application.isPlaying)
+        {
+            UpdateMechanicalParts();
+        }
+    }
+
     public void UpdateMechanicalParts()
     {
         if (breechBlock != null)
-        {
-            // Lerp smoothly slides the block between point A and point B based on our 0-1 progress
             breechBlock.localPosition = Vector3.Lerp(blockClosedPosition, blockOpenPosition, openProgress);
-        }
 
         if (breechHandle != null)
         {
-            // Slerp smoothly rotates the handle between angle A and angle B
             Quaternion closedRot = Quaternion.Euler(handleClosedRotation);
             Quaternion openRot = Quaternion.Euler(handleOpenRotation);
             breechHandle.localRotation = Quaternion.Slerp(closedRot, openRot, openProgress);
         }
+
+        // --- EJECTION TRIGGER LOGIC ---
+        // If the breech just passed the 80% open mark, trigger the ejection!
+        if (openProgress > 0.8f && lastProgress <= 0.8f)
+        {
+            if (firingSystem != null)
+            {
+                firingSystem.Eject();
+            }
+        }
+
+        lastProgress = openProgress;
     }
 }
