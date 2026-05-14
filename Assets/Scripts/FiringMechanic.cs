@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Added the modern Input System namespace!
+using UnityEngine.InputSystem;
 
 public class FiringMechanic : MonoBehaviour
 {
@@ -17,11 +17,12 @@ public class FiringMechanic : MonoBehaviour
     public GameObject projectilePrefab;
     public Transform barrelTip;
     public float firingForce = 150f;
+    public Vector3 projectileRotationOffset = new Vector3(-90f, 0f, 0f);
 
     [Header("Ejection Physics")]
     public GameObject ejectedCasingPrefab;
     public Transform ejectionPoint;
-    public float ejectionForce = 5f;
+    public float ejectionForce = 15f;
     public float ejectionSpin = 10f;
 
     void Start()
@@ -31,7 +32,6 @@ public class FiringMechanic : MonoBehaviour
 
     void Update()
     {
-        // --- FIXED: Modern Keyboard controls for rapid testing in Play Mode ---
         if (Keyboard.current != null)
         {
             if (Keyboard.current.rKey.wasPressedThisFrame) LoadGun();
@@ -39,7 +39,7 @@ public class FiringMechanic : MonoBehaviour
         }
     }
 
-    [ContextMenu("1. Load Gun")]
+    [ContextMenu("Load Gun")]
     public void LoadGun()
     {
         if (currentState == ChamberState.Empty && breech.openProgress > 0.9f)
@@ -48,13 +48,9 @@ public class FiringMechanic : MonoBehaviour
             UpdateChamberVisuals();
             Debug.Log("Gun Loaded!");
         }
-        else
-        {
-            Debug.LogWarning("Cannot load: Gun is not empty or breech is closed.");
-        }
     }
 
-    [ContextMenu("2. Fire Gun")]
+    [ContextMenu("Fire Gun")]
     public void FireGun()
     {
         if (currentState == ChamberState.Loaded && breech.openProgress < 0.1f)
@@ -64,7 +60,9 @@ public class FiringMechanic : MonoBehaviour
 
             if (projectilePrefab != null && barrelTip != null)
             {
-                GameObject proj = Instantiate(projectilePrefab, barrelTip.position, barrelTip.rotation);
+                Quaternion spawnRotation = barrelTip.rotation * Quaternion.Euler(projectileRotationOffset);
+                GameObject proj = Instantiate(projectilePrefab, barrelTip.position, spawnRotation);
+
                 Rigidbody rb = proj.GetComponent<Rigidbody>();
                 if (rb != null)
                 {
