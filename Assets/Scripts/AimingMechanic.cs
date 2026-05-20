@@ -36,13 +36,11 @@ public class AimingMechanic : MonoBehaviour
     [Tooltip("Check this box if you manually altered the 3D cranks in the scene view and want the script to learn their new angled mountings.")]
     public bool saveMountingAngles = false;
 
-    // We cache the angled mountings (like Y=7.011) here so they are never lost to Gimbal Lock
     [HideInInspector] public Quaternion horizBaseRot = Quaternion.identity;
     [HideInInspector] public Quaternion vertBaseRot = Quaternion.identity;
 
     private void OnEnable()
     {
-        // Safe-catch to initialize the base mounting rotations
         if (horizBaseRot == Quaternion.identity && horizontalCrank != null) horizBaseRot = horizontalCrank.localRotation;
         if (vertBaseRot == Quaternion.identity && verticalCrank != null) vertBaseRot = verticalCrank.localRotation;
     }
@@ -72,15 +70,11 @@ public class AimingMechanic : MonoBehaviour
 
     private void HandleHorizontalAiming()
     {
-        // 1. Where does the gun want to go based on the total crank spin?
         float proposedYaw = horizontalCrankDegrees * gearingRatio;
 
-        // 2. Is that legal?
         if (proposedYaw > maxTraverse || proposedYaw < minTraverse)
         {
             currentYaw = Mathf.Clamp(proposedYaw, minTraverse, maxTraverse);
-
-            // 3. HARD LOCK: Force the Inspector slider to stop moving!
             horizontalCrankDegrees = currentYaw / gearingRatio;
         }
         else
@@ -88,13 +82,15 @@ public class AimingMechanic : MonoBehaviour
             currentYaw = proposedYaw;
         }
 
-        // 4. Apply Left/Right rotation to the gun
         horizontalCarriage.localEulerAngles = new Vector3(0f, currentYaw, 0f);
 
-        // 5. Apply the spin to the crank ON TOP of its saved mounting angle. 
-        // This makes Y-axis drift mathematically impossible!
-        Quaternion spin = Quaternion.AngleAxis(horizontalCrankDegrees, Vector3.forward);
-        horizontalCrank.localRotation = horizBaseRot * spin;
+        // ONLY force-overwrite the crank transform if we are NOT in Play Mode.
+        // In VR Play Mode, let the XRKnob script smoothly handle its own object rotation tracking.
+        if (!Application.isPlaying)
+        {
+            Quaternion spin = Quaternion.AngleAxis(horizontalCrankDegrees, Vector3.forward);
+            horizontalCrank.localRotation = horizBaseRot * spin;
+        }
     }
 
     private void HandleVerticalAiming()
@@ -113,7 +109,48 @@ public class AimingMechanic : MonoBehaviour
 
         verticalBarrel.localEulerAngles = new Vector3(currentPitch, 0f, 0f);
 
-        Quaternion spin = Quaternion.AngleAxis(verticalCrankDegrees, Vector3.forward);
-        verticalCrank.localRotation = vertBaseRot * spin;
+        // ONLY force-overwrite the crank transform if we are NOT in Play Mode.
+        if (!Application.isPlaying)
+        {
+            Quaternion spin = Quaternion.AngleAxis(verticalCrankDegrees, Vector3.forward);
+            verticalCrank.localRotation = vertBaseRot * spin;
+        }
+    }
+
+    // VR Bridges for the Cranks
+    public void SetHorizontalCrankFromVR(float knobValue)
+    {
+        horizontalCrankDegrees = knobValue * 360f;
+    }
+
+    public void SetVerticalCrankFromVR(float knobValue)
+    {
+        verticalCrankDegrees = knobValue * 360f;
+    }
+
+    [ContextMenu("Reset Aim To Zero")]
+    public void ResetAim()
+    {
+        if (horizontalCrank != null)
+        {
+            float totalHorizontalSpin = currentYaw / gearingRatio;
+            horizontalCrank.Rotate(0f, 0f, -totalHorizontalSpin, Space.Self);
+            horizBaseRot = horizontalCrank.localRotation;
+        }
+
+        if (verticalCrank != null)
+        {
+            float totalVerticalSpin = currentPitch / gearingRatio;
+            verticalCrank.Rotate(0f, 0f, -totalVerticalSpin, Space.Self);
+            vertBaseRot = verticalCrank.localRotation;
+        }
+
+        currentYaw = 0f;
+        currentPitch = 0f;
+        horizontalCrankDegrees = 0f;
+        verticalCrankDegrees = 0f;
+
+        if (horizontalCarriage != null) horizontalCarriage.localEulerAngles = Vector3.zero;
+        if (verticalBarrel != null) verticalBarrel.localEulerAngles = Vector3.zero;
     }
 }

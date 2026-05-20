@@ -64,4 +64,11 @@ public class BreechMechanic : MonoBehaviour
 
         lastProgress = openProgress;
     }
+
+    // VR Bridge for the Breech Handle
+    public void SetOpenProgressFromVR(float value)
+    {
+        openProgress = value;
+        UpdateMechanicalParts();
+    }
 }
