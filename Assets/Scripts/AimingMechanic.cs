@@ -7,9 +7,11 @@ public class AimingMechanic : MonoBehaviour
     public Transform horizontalCarriage;
     public Transform verticalBarrel;
 
-    [Header("The Cranks")]
-    public Transform horizontalCrank;
-    public Transform verticalCrank;
+    [Header("The Cranks (_local containers)")]
+    [Tooltip("Assign your '*_local' correction objects here (e.g., horizontal_aiming_handle_local).")]
+    public Transform horizontalCrankLocal;
+    [Tooltip("Assign your vertical '*_local' correction object here.")]
+    public Transform verticalCrankLocal;
 
     [Header("Mechanical Settings")]
     public float gearingRatio = 0.05f;
@@ -20,136 +22,131 @@ public class AimingMechanic : MonoBehaviour
     public float maxTraverse = 30f;
     public float minTraverse = -30f;
 
-    [Header("VR Simulation (Draggable)")]
-    [Tooltip("Drag this to spin the horizontal crank infinitely. This perfectly mimics the XR Knob in VR!")]
-    public float horizontalCrankDegrees = 0f;
-    [Tooltip("Drag this to spin the vertical crank infinitely.")]
-    public float verticalCrankDegrees = 0f;
+    [Header("VR Tuning")]
+    [Tooltip("If the gun rotates too slowly when twisting in VR, increase this multiplier.")]
+    public float vrSpeedMultiplier = 1f;
 
     [Header("Live Data (Read Only)")]
     public float currentYaw = 0f;
     public float currentPitch = 0f;
 
     [Header("Actions")]
-    [Tooltip("Check this box to cleanly zero out the gun and cranks.")]
     public bool resetAimToZero = false;
-    [Tooltip("Check this box if you manually altered the 3D cranks in the scene view and want the script to learn their new angled mountings.")]
     public bool saveMountingAngles = false;
 
     [HideInInspector] public Quaternion horizBaseRot = Quaternion.identity;
     [HideInInspector] public Quaternion vertBaseRot = Quaternion.identity;
 
+    // Track historical tracking values to isolate clean mathematical deltas
+    private float lastVRHorizDegrees;
+    private float lastVRVertDegrees;
+    private bool isFirstFrameHoriz = true;
+    private bool isFirstFrameVert = true;
+
     private void OnEnable()
     {
-        if (horizBaseRot == Quaternion.identity && horizontalCrank != null) horizBaseRot = horizontalCrank.localRotation;
-        if (vertBaseRot == Quaternion.identity && verticalCrank != null) vertBaseRot = verticalCrank.localRotation;
+        if (horizBaseRot == Quaternion.identity && horizontalCrankLocal != null) horizBaseRot = horizontalCrankLocal.localRotation;
+        if (vertBaseRot == Quaternion.identity && verticalCrankLocal != null) vertBaseRot = verticalCrankLocal.localRotation;
     }
 
     void Update()
     {
         if (resetAimToZero)
         {
-            horizontalCrankDegrees = 0f;
-            verticalCrankDegrees = 0f;
+            currentYaw = 0f;
+            currentPitch = 0f;
             resetAimToZero = false;
         }
 
         if (saveMountingAngles)
         {
-            if (horizontalCrank != null) horizBaseRot = horizontalCrank.localRotation;
-            if (verticalCrank != null) vertBaseRot = verticalCrank.localRotation;
-            horizontalCrankDegrees = 0f;
-            verticalCrankDegrees = 0f;
+            if (horizontalCrankLocal != null) horizBaseRot = horizontalCrankLocal.localRotation;
+            if (verticalCrankLocal != null) vertBaseRot = verticalCrankLocal.localRotation;
             saveMountingAngles = false;
-            Debug.Log("New crank mounting angles successfully saved!");
+            Debug.Log("New local container mounting angles successfully saved!");
         }
 
-        if (horizontalCrank != null && horizontalCarriage != null) HandleHorizontalAiming();
-        if (verticalCrank != null && verticalBarrel != null) HandleVerticalAiming();
-    }
+        // Apply core logic structures
+        currentYaw = Mathf.Clamp(currentYaw, minTraverse, maxTraverse);
+        currentPitch = Mathf.Clamp(currentPitch, minElevation, maxElevation);
 
-    private void HandleHorizontalAiming()
-    {
-        float proposedYaw = horizontalCrankDegrees * gearingRatio;
+        if (horizontalCarriage != null) horizontalCarriage.localEulerAngles = new Vector3(0f, currentYaw, 0f);
+        if (verticalBarrel != null) verticalBarrel.localEulerAngles = new Vector3(currentPitch, 0f, 0f);
 
-        if (proposedYaw > maxTraverse || proposedYaw < minTraverse)
-        {
-            currentYaw = Mathf.Clamp(proposedYaw, minTraverse, maxTraverse);
-            horizontalCrankDegrees = currentYaw / gearingRatio;
-        }
-        else
-        {
-            currentYaw = proposedYaw;
-        }
-
-        horizontalCarriage.localEulerAngles = new Vector3(0f, currentYaw, 0f);
-
-        // ONLY force-overwrite the crank transform if we are NOT in Play Mode.
-        // In VR Play Mode, let the XRKnob script smoothly handle its own object rotation tracking.
+        // In the Editor view, drive visual followers safely from variables
         if (!Application.isPlaying)
         {
-            Quaternion spin = Quaternion.AngleAxis(horizontalCrankDegrees, Vector3.forward);
-            horizontalCrank.localRotation = horizBaseRot * spin;
+            if (horizontalCrankLocal != null)
+            {
+                float targetCrankDegrees = currentYaw / gearingRatio;
+                horizontalCrankLocal.localRotation = horizBaseRot * Quaternion.AngleAxis(targetCrankDegrees, Vector3.forward);
+            }
+            if (verticalCrankLocal != null)
+            {
+                float targetCrankDegrees = currentPitch / gearingRatio;
+                verticalCrankLocal.localRotation = vertBaseRot * Quaternion.AngleAxis(targetCrankDegrees, Vector3.forward);
+            }
         }
     }
 
-    private void HandleVerticalAiming()
-    {
-        float proposedPitch = verticalCrankDegrees * gearingRatio;
-
-        if (proposedPitch > maxElevation || proposedPitch < minElevation)
-        {
-            currentPitch = Mathf.Clamp(proposedPitch, minElevation, maxElevation);
-            verticalCrankDegrees = currentPitch / gearingRatio;
-        }
-        else
-        {
-            currentPitch = proposedPitch;
-        }
-
-        verticalBarrel.localEulerAngles = new Vector3(currentPitch, 0f, 0f);
-
-        // ONLY force-overwrite the crank transform if we are NOT in Play Mode.
-        if (!Application.isPlaying)
-        {
-            Quaternion spin = Quaternion.AngleAxis(verticalCrankDegrees, Vector3.forward);
-            verticalCrank.localRotation = vertBaseRot * spin;
-        }
-    }
-
-    // VR Bridges for the Cranks
+    // --- REWORKED DELTA VR BRIDGES ---
+    // Safely captures how much your hand turned, applies it to the gun,
+    // and completely stops feedback looping by ignoring absolute positions.
     public void SetHorizontalCrankFromVR(float knobValue)
     {
-        horizontalCrankDegrees = knobValue * 360f;
+        if (!Application.isPlaying) return;
+
+        float currentDegrees = knobValue * 360f;
+
+        if (isFirstFrameHoriz)
+        {
+            lastVRHorizDegrees = currentDegrees;
+            isFirstFrameHoriz = false;
+            return;
+        }
+
+        // Isolate frame-to-frame movement delta safely wrapping around 360 boundaries
+        float deltaDegrees = Mathf.DeltaAngle(lastVRHorizDegrees, currentDegrees);
+
+        // Suppress massive tracking initialization jumps on fresh selections
+        if (Mathf.Abs(deltaDegrees) < 180f)
+        {
+            currentYaw += deltaDegrees * gearingRatio * vrSpeedMultiplier;
+        }
+
+        lastVRHorizDegrees = currentDegrees;
     }
 
     public void SetVerticalCrankFromVR(float knobValue)
     {
-        verticalCrankDegrees = knobValue * 360f;
+        if (!Application.isPlaying) return;
+
+        float currentDegrees = knobValue * 360f;
+
+        if (isFirstFrameVert)
+        {
+            lastVRVertDegrees = currentDegrees;
+            isFirstFrameVert = false;
+            return;
+        }
+
+        float deltaDegrees = Mathf.DeltaAngle(lastVRVertDegrees, currentDegrees);
+
+        if (Mathf.Abs(deltaDegrees) < 180f)
+        {
+            currentPitch += deltaDegrees * gearingRatio * vrSpeedMultiplier;
+        }
+
+        lastVRVertDegrees = currentDegrees;
     }
 
     [ContextMenu("Reset Aim To Zero")]
     public void ResetAim()
     {
-        if (horizontalCrank != null)
-        {
-            float totalHorizontalSpin = currentYaw / gearingRatio;
-            horizontalCrank.Rotate(0f, 0f, -totalHorizontalSpin, Space.Self);
-            horizBaseRot = horizontalCrank.localRotation;
-        }
-
-        if (verticalCrank != null)
-        {
-            float totalVerticalSpin = currentPitch / gearingRatio;
-            verticalCrank.Rotate(0f, 0f, -totalVerticalSpin, Space.Self);
-            vertBaseRot = verticalCrank.localRotation;
-        }
-
         currentYaw = 0f;
         currentPitch = 0f;
-        horizontalCrankDegrees = 0f;
-        verticalCrankDegrees = 0f;
-
+        isFirstFrameHoriz = true;
+        isFirstFrameVert = true;
         if (horizontalCarriage != null) horizontalCarriage.localEulerAngles = Vector3.zero;
         if (verticalBarrel != null) verticalBarrel.localEulerAngles = Vector3.zero;
     }

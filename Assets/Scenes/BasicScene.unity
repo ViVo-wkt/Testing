@@ -2966,15 +2966,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AimingMechanic
   horizontalCarriage: {fileID: 2239902160020478899}
   verticalBarrel: {fileID: 6126641749328858875}
-  horizontalCrank: {fileID: 4594826394645572092}
-  verticalCrank: {fileID: 2904766028303187556}
+  horizontalCrankLocal: {fileID: 4594826394645572092}
+  verticalCrankLocal: {fileID: 2904766028303187556}
   gearingRatio: 0.01
   maxElevation: 5
   minElevation: -5
   maxTraverse: 10
   minTraverse: -10
-  horizontalCrankDegrees: 0
-  verticalCrankDegrees: 0
+  vrInputSensitivity: 45
   currentYaw: 0
   currentPitch: 0
   resetAimToZero: 0
