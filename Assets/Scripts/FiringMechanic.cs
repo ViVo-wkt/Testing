@@ -25,13 +25,41 @@ public class FiringMechanic : MonoBehaviour
     public float ejectionForce = 15f;
     public float ejectionSpin = 10f;
 
+    [Header("Visual Effects (Game Juice)")]
+    public ParticleSystem muzzleFlash;
+    public ParticleSystem breechSmoke;
+
+    [Tooltip("Assign the visual root of the gun or carriage here to roll the entire gun backward.")]
+    public Transform recoilObject;
+    public float recoilDistance = 0.5f;
+    [Tooltip("How fast the gun rolls back to its starting position.")]
+    public float recoilReturnSpeed = 2f;
+
+    private Vector3 originalLocalPos;
+
     void Start()
     {
         UpdateChamberVisuals();
+
+        if (recoilObject != null)
+        {
+            // Remember exactly where the gun sits in the scene
+            originalLocalPos = recoilObject.localPosition;
+        }
     }
 
     void Update()
     {
+        // Smoothly roll the entire gun back to its starting position every frame
+        if (recoilObject != null)
+        {
+            recoilObject.localPosition = Vector3.Lerp(
+                recoilObject.localPosition,
+                originalLocalPos,
+                Time.deltaTime * recoilReturnSpeed
+            );
+        }
+
         if (Keyboard.current != null)
         {
             if (Keyboard.current.rKey.wasPressedThisFrame) LoadGun();
@@ -46,7 +74,6 @@ public class FiringMechanic : MonoBehaviour
         {
             currentState = ChamberState.Loaded;
             UpdateChamberVisuals();
-            Debug.Log("Gun Loaded!");
         }
     }
 
@@ -64,13 +91,16 @@ public class FiringMechanic : MonoBehaviour
                 GameObject proj = Instantiate(projectilePrefab, barrelTip.position, spawnRotation);
 
                 Rigidbody rb = proj.GetComponent<Rigidbody>();
-                if (rb != null)
-                {
-                    rb.AddForce(barrelTip.forward * firingForce, ForceMode.Impulse);
-                }
+                if (rb != null) rb.AddForce(barrelTip.forward * firingForce, ForceMode.Impulse);
             }
 
-            Debug.Log("BOOM!");
+            if (muzzleFlash != null) muzzleFlash.Play();
+
+            // Trigger Recoil (Snaps the whole assigned object backward on its local Z axis)
+            if (recoilObject != null)
+            {
+                recoilObject.localPosition = originalLocalPos + new Vector3(0, 0, -recoilDistance);
+            }
         }
     }
 
@@ -92,7 +122,7 @@ public class FiringMechanic : MonoBehaviour
                 }
             }
 
-            Debug.Log("Casing Ejected!");
+            if (breechSmoke != null) breechSmoke.Play();
         }
     }
 
