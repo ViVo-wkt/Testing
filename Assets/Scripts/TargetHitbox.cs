@@ -12,51 +12,59 @@ public class TargetHitbox : MonoBehaviour
     [Header("System Links")]
     public GameManager gameManager;
 
-    private MeshRenderer meshRenderer;
-    private Collider col;
+    // Changed from single to array to handle child models
+    private MeshRenderer[] allRenderers;
+    private Collider[] allColliders;
 
     void Start()
     {
-        meshRenderer = GetComponent<MeshRenderer>();
-        col = GetComponent<Collider>();
+        // Get all renderers and colliders attached to this object AND its children
+        allRenderers = GetComponentsInChildren<MeshRenderer>();
+        allColliders = GetComponentsInChildren<Collider>();
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        // 1. Identify if it's our artillery shell
         ArtilleryProjectile projectile = collision.gameObject.GetComponentInParent<ArtilleryProjectile>();
 
         if (projectile != null)
         {
-            // Report the hit
             if (gameManager != null) gameManager.AddScore();
 
-            // 2. Trigger the explosion visuals at the target location
             if (explosionPrefab != null)
             {
                 Instantiate(explosionPrefab, transform.position, transform.rotation);
             }
 
-            // 3. FORCE DESTRUCTION OF THE SHELL IMMEDIATELY
-            // Destroying the shell here stops it from "floating"
             Destroy(collision.gameObject);
-
-            // 4. Trigger the Respawn routine for this target
             StartCoroutine(RespawnRoutine());
         }
     }
 
     IEnumerator RespawnRoutine()
     {
-        // Hide the target visuals and disable interaction
-        meshRenderer.enabled = false;
-        col.enabled = false;
+        // Toggle visibility for all child components
+        foreach (var rend in allRenderers)
+        {
+            rend.enabled = false;
+        }
 
-        // Wait for the delay
+        // Toggle collision for all child components
+        foreach (var col in allColliders)
+        {
+            col.enabled = false;
+        }
+
         yield return new WaitForSeconds(respawnDelay);
 
-        // Re-enable
-        meshRenderer.enabled = true;
-        col.enabled = true;
+        // Re-enable everything
+        foreach (var rend in allRenderers)
+        {
+            rend.enabled = true;
+        }
+        foreach (var col in allColliders)
+        {
+            col.enabled = true;
+        }
     }
 }

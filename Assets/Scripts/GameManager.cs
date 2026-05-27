@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.SceneManagement; // Required to reload the scene
 
@@ -45,8 +46,9 @@ public class GameManager : MonoBehaviour
         }
         else if (canReset)
         {
-            // Detect if ANY button is pressed (Controller or Keyboard)
-            if (Input.anyKeyDown)
+            // NEW: Check if ANY action was performed on the keyboard OR any Gamepad/VR controller
+            if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame ||
+                Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
             {
                 ReloadGame();
             }
