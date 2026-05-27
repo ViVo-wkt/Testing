@@ -1,28 +1,62 @@
 using UnityEngine;
+using System.Collections;
 
 public class TargetHitbox : MonoBehaviour
 {
     [Header("Visuals")]
     public GameObject explosionPrefab;
 
+    [Header("Respawn Settings")]
+    public float respawnDelay = 3f;
+
+    [Header("System Links")]
+    public GameManager gameManager;
+
+    private MeshRenderer meshRenderer;
+    private Collider col;
+
+    void Start()
+    {
+        meshRenderer = GetComponent<MeshRenderer>();
+        col = GetComponent<Collider>();
+    }
+
     void OnCollisionEnter(Collision collision)
     {
-        // Check if the object hitting us has the ArtilleryProjectile script
-        if (collision.gameObject.GetComponentInParent<ArtilleryProjectile>() != null)
-        {
-            Debug.Log($"<color=green>DIRECT HIT on {gameObject.name}!</color>");
+        // 1. Identify if it's our artillery shell
+        ArtilleryProjectile projectile = collision.gameObject.GetComponentInParent<ArtilleryProjectile>();
 
-            // 1. Spawn the explosion exactly where the target is
+        if (projectile != null)
+        {
+            // Report the hit
+            if (gameManager != null) gameManager.AddScore();
+
+            // 2. Trigger the explosion visuals at the target location
             if (explosionPrefab != null)
             {
                 Instantiate(explosionPrefab, transform.position, transform.rotation);
             }
 
-            // 2. Destroy the artillery shell
+            // 3. FORCE DESTRUCTION OF THE SHELL IMMEDIATELY
+            // Destroying the shell here stops it from "floating"
             Destroy(collision.gameObject);
 
-            // 3. Destroy the target cube itself
-            Destroy(gameObject);
+            // 4. Trigger the Respawn routine for this target
+            StartCoroutine(RespawnRoutine());
         }
+    }
+
+    IEnumerator RespawnRoutine()
+    {
+        // Hide the target visuals and disable interaction
+        meshRenderer.enabled = false;
+        col.enabled = false;
+
+        // Wait for the delay
+        yield return new WaitForSeconds(respawnDelay);
+
+        // Re-enable
+        meshRenderer.enabled = true;
+        col.enabled = true;
     }
 }
