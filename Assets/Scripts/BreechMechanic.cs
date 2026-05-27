@@ -19,24 +19,40 @@ public class BreechMechanic : MonoBehaviour
     [Range(0f, 1f)]
     public float openProgress = 0f;
 
+    [Header("Animation Settings")]
+    [Tooltip("How fast the breech automatically opens/closes when clicked.")]
+    public float animationSpeed = 4f;
+
     [Header("System Links")]
     [Tooltip("Link the Firing Mechanic script here so the breech can tell it when to eject!")]
     public FiringMechanic firingSystem;
 
-    // Tracks where the breech was a millisecond ago
     private float lastProgress = 0f;
+
+    // Tracks what state the breech is trying to reach automatically (0 = closed, 1 = open)
+    private float targetProgress = 0f;
 
     private void OnValidate()
     {
         UpdateMechanicalParts();
+
+        // If you drag the slider manually in the Editor, update the target so it doesn't fight you
+        if (!Application.isPlaying)
+        {
+            targetProgress = openProgress;
+        }
     }
 
     private void Update()
     {
-        // This ensures the slider works in Play Mode too!
         if (Application.isPlaying)
         {
-            UpdateMechanicalParts();
+            // Smoothly animate the progress towards the target over time
+            if (openProgress != targetProgress)
+            {
+                openProgress = Mathf.MoveTowards(openProgress, targetProgress, animationSpeed * Time.deltaTime);
+                UpdateMechanicalParts();
+            }
         }
     }
 
@@ -65,10 +81,19 @@ public class BreechMechanic : MonoBehaviour
         lastProgress = openProgress;
     }
 
-    // VR Bridge for the Breech Handle
-    public void SetOpenProgressFromVR(float value)
+    // --- NEW VR BRIDGE ---
+    // Call this from the XR Simple Interactable's "Select Entered" event
+    public void ToggleBreechFromVR()
     {
-        openProgress = value;
-        UpdateMechanicalParts();
+        if (targetProgress > 0.5f)
+        {
+            // It is mostly open, so tell the script to close it
+            targetProgress = 0f;
+        }
+        else
+        {
+            // It is mostly closed, so tell the script to open it
+            targetProgress = 1f;
+        }
     }
 }

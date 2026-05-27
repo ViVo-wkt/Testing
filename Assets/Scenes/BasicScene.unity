@@ -146,7 +146,7 @@ Transform:
   m_GameObject: {fileID: 263509455}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.06339431, z: -0.1074}
+  m_LocalPosition: {x: 0, y: -0.06339431, z: -0.047}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -637,6 +637,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4778211696441940833, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_SmoothTurnEnabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663893676086941514, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_SmoothTurnEnabled
       value: 1
       objectReference: {fileID: 0}
@@ -12228,7 +12232,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 456510251383999710}
-  - component: {fileID: 4069776382135349972}
   - component: {fileID: 4069776382135349973}
   - component: {fileID: 4069776382135349974}
   m_Layer: 0
@@ -12238,33 +12241,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!54 &4069776382135349972
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4069776382135349971}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 1
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!135 &4069776382135349973
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -12295,9 +12271,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 4069776382135349971}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e888dc0064d84d041818fa202b52d6be, type: 3}
+  m_Script: {fileID: 11500000, guid: 8a35f6cfbfba9b548aaa00d52cfe8a50, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Unity.VRTemplate.XRKnob
+  m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable
   m_InteractionManager: {fileID: 0}
   m_Colliders:
   - {fileID: 4069776382135349973}
@@ -12328,7 +12304,19 @@ MonoBehaviour:
       m_Calls: []
   m_FirstSelectEntered:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 7209767184042203516}
+        m_TargetAssemblyTypeName: BreechMechanic, Assembly-CSharp
+        m_MethodName: ToggleBreechFromVR
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_LastSelectExited:
     m_PersistentCalls:
       m_Calls: []
@@ -12361,29 +12349,6 @@ MonoBehaviour:
   m_StartingInteractionStrengthFilters: []
   m_AutoFindParentInteractableInHierarchy: 0
   m_ParentInteractableObject: {fileID: 0}
-  m_Handle: {fileID: 456510251383999710}
-  m_Value: 0.5
-  m_ClampedMotion: 1
-  m_MaxAngle: 90
-  m_MinAngle: -90
-  m_AngleIncrement: 0
-  m_PositionTrackedRadius: 0.1
-  m_TwistSensitivity: 1.5
-  m_OnValueChange:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 7209767184042203516}
-        m_TargetAssemblyTypeName: BreechMechanic, Assembly-CSharp
-        m_MethodName: SetOpenProgressFromVR
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!23 &4116764448694461377
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -13370,6 +13335,7 @@ MonoBehaviour:
   handleClosedRotation: {x: 0, y: 0.04573804, z: -0.2987981}
   handleOpenRotation: {x: 0, y: -45, z: 0}
   openProgress: 1
+  animationSpeed: 4
   firingSystem: {fileID: 7209767184042203518}
 --- !u!114 &7209767184042203517
 MonoBehaviour:
@@ -13417,7 +13383,7 @@ MonoBehaviour:
   staticEmptyCasingMesh: {fileID: 7719910218601004483}
   projectilePrefab: {fileID: 1225733620702970197, guid: 990714a19db1d7047a6545869cde99b4, type: 3}
   barrelTip: {fileID: 828869266}
-  firingForce: 60
+  firingForce: 90
   projectileRotationOffset: {x: -90, y: 0, z: 0}
   ejectedCasingPrefab: {fileID: 3681827286734233567, guid: 92df768e599844246b7c116603f7da26, type: 3}
   ejectionPoint: {fileID: 1063804529}
