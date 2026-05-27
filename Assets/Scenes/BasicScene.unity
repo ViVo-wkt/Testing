@@ -1109,7 +1109,7 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1775656458}
   serializedVersion: 8
-  lengthInSec: 0.5
+  lengthInSec: 1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 0
@@ -13379,6 +13379,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FiringMechanic
   currentState: 0
   breech: {fileID: 7209767184042203516}
+  ammoSocket: {fileID: 263509458}
   staticFullShellMesh: {fileID: 946366680682631760}
   staticEmptyCasingMesh: {fileID: 7719910218601004483}
   projectilePrefab: {fileID: 1225733620702970197, guid: 990714a19db1d7047a6545869cde99b4, type: 3}

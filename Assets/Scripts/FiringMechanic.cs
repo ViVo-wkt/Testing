@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+// NEW: We need to include the VR namespace so the script can talk to the Socket!
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class FiringMechanic : MonoBehaviour
 {
@@ -8,6 +10,10 @@ public class FiringMechanic : MonoBehaviour
     [Header("Current State")]
     public ChamberState currentState = ChamberState.Empty;
     public BreechMechanic breech;
+
+    [Header("VR Integration")]
+    [Tooltip("Drag your Chamber_Socket here so the gun can consume the loaded shell!")]
+    public XRSocketInteractor ammoSocket;
 
     [Header("Static Chamber Meshes")]
     public GameObject staticFullShellMesh;
@@ -32,7 +38,6 @@ public class FiringMechanic : MonoBehaviour
     [Tooltip("Assign the visual root of the gun or carriage here to roll the entire gun backward.")]
     public Transform recoilObject;
     public float recoilDistance = 0.5f;
-    [Tooltip("How fast the gun rolls back to its starting position.")]
     public float recoilReturnSpeed = 2f;
 
     private Vector3 originalLocalPos;
@@ -43,14 +48,12 @@ public class FiringMechanic : MonoBehaviour
 
         if (recoilObject != null)
         {
-            // Remember exactly where the gun sits in the scene
             originalLocalPos = recoilObject.localPosition;
         }
     }
 
     void Update()
     {
-        // Smoothly roll the entire gun back to its starting position every frame
         if (recoilObject != null)
         {
             recoilObject.localPosition = Vector3.Lerp(
@@ -70,10 +73,22 @@ public class FiringMechanic : MonoBehaviour
     [ContextMenu("Load Gun")]
     public void LoadGun()
     {
+        // Only load if the chamber is empty AND the breech is open
         if (currentState == ChamberState.Empty && breech.openProgress > 0.9f)
         {
             currentState = ChamberState.Loaded;
             UpdateChamberVisuals();
+
+            // --- THE FIX: CONSUME THE PHYSICAL SHELL ---
+            if (ammoSocket != null && ammoSocket.hasSelection)
+            {
+                // Grab the physical shell prefab that the socket is currently holding
+                GameObject physicalShell = ammoSocket.firstInteractableSelected.transform.gameObject;
+
+                // Destroy it out of existence! 
+                // (The XR Toolkit is smart enough to cleanly release it when it gets destroyed)
+                Destroy(physicalShell);
+            }
         }
     }
 
@@ -96,7 +111,6 @@ public class FiringMechanic : MonoBehaviour
 
             if (muzzleFlash != null) muzzleFlash.Play();
 
-            // Trigger Recoil (Snaps the whole assigned object backward on its local Z axis)
             if (recoilObject != null)
             {
                 recoilObject.localPosition = originalLocalPos + new Vector3(0, 0, -recoilDistance);
