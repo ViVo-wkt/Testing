@@ -103,7 +103,7 @@ MonoBehaviour:
   m_Colliders:
   - {fileID: 3253888131880665485}
   m_InteractionLayers:
-    m_Bits: 1073741824
+    m_Bits: 1
   m_DistanceCalculationMode: 1
   m_SelectMode: 0
   m_FocusMode: 1
@@ -170,7 +170,7 @@ MonoBehaviour:
   m_SnapToColliderVolume: 1
   m_ReinitializeDynamicAttachEverySingleGrab: 1
   m_AttachEaseInTime: 0.15
-  m_MovementType: 0
+  m_MovementType: 2
   m_PredictedVisualsTransform: {fileID: 4771552270047467386}
   m_VelocityDamping: 1
   m_VelocityScale: 1
